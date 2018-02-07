@@ -8,11 +8,11 @@ def plot_it_all():
     plt.figure()
     colors = list(dict(mcolors.BASE_COLORS, **mcolors.CSS4_COLORS).keys())
     count = 0
-    for batchsize in [100, 200, 500, 2000]:
+    for batchsize in [50, 100, 200, 500, 2000]:
         for augmented in [0, 1]:
             returns = []
             for j in range(1000):
-                filename = "../data/run_num_%d_augment_%d_batchsize_%d.pkl" % (j, int(augmented), batchsize)
+                filename = "../data/new_run_num_%d_augment_%d_batchsize_%d.pkl" % (j, int(augmented), batchsize)
                 if isfile(filename):
                     data = pickle.load(open(filename, "rb"))[-50:]
                     returns.append(data)

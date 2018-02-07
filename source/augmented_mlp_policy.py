@@ -67,8 +67,8 @@ def augment_train(self, episodic_returns, run_num, augment, batchsize):
             average_return = np.mean([sum(path["rewards"]) for path in paths])
             episodic_returns.append(average_return)
             plot(fig, hl11, ax2, episodic_returns)
-            if augment:
-                new_paths = augment_paths(self.env, paths, repeats=10)
+            if augment > 0:
+                new_paths = augment_paths(self.env, paths, repeats=augment)
             else:
                 new_paths = paths
             #logger.dump_tabular(with_prefix=False)
@@ -78,12 +78,12 @@ def augment_train(self, episodic_returns, run_num, augment, batchsize):
             self.optimize_policy(itr, samples_data)
             print("Optimization time", time.time() - start)
             self.current_itr = itr + 1
-    with open("../data/new_run_num_%d_augment_%d_batchsize_%d.pkl" % (run_num, int(augment), batchsize), 'wb') as f:
+    with open("../data/new_run_num_%d_augment_%d_batchsize_%d.pkl" % (run_num, augment, batchsize), 'wb') as f:
         pickle.dump(episodic_returns, f)
     plt.close()
     self.shutdown_worker()
 
-def run_task(run_num, batchsize, augment=False):
+def run_task(run_num, batchsize, augment):
     # Please note that different environments with different action spaces may require different
     # policies. For example with a Box action space, a GaussianMLPPolicy works, but for a Discrete
     # action space may need to use a CategoricalMLPPolicy (see the trpo_gym_cartpole.py example)
@@ -111,11 +111,11 @@ def run_task(run_num, batchsize, augment=False):
     )
     augment_train(algo, episodic_returns, run_num, augment, batchsize)
 
-for batchsize in [500, 2000]:
-    for i in range(10):
-        run_task(i, batchsize, augment=False)
-    for i in range(10):
-        run_task(i, batchsize, augment=True)
+for augment in [50, 100]:
+    for batchsize in [50, 100, 200, 500, 2000]:
+        for i in range(10):
+            run_task(i, batchsize, augment)
+
 
 
 
