@@ -9,13 +9,16 @@ def plot_it_all():
     colors = list(dict(mcolors.BASE_COLORS, **mcolors.CSS4_COLORS).keys())
     count = 0
     for batchsize in [50, 100, 200, 500, 2000]:
-        for augmented in [0, 1]:
+        for augmented in [0, 500]:
             returns = []
             for j in range(1000):
                 filename = "../data/new_run_num_%d_augment_%d_batchsize_%d.pkl" % (j, int(augmented), batchsize)
                 if isfile(filename):
                     data = pickle.load(open(filename, "rb"))[-50:]
                     returns.append(data)
+
+            if len(returns) == 0:
+                continue
             mean = np.mean(returns, axis=0)
             variance = np.std(returns, axis=0)
             if augmented:

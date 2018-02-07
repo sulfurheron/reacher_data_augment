@@ -111,7 +111,7 @@ def run_task(run_num, batchsize, augment):
     )
     augment_train(algo, episodic_returns, run_num, augment, batchsize)
 
-for augment in [50, 100]:
+for augment in [500, 100]:
     for batchsize in [50, 100, 200, 500, 2000]:
         for i in range(10):
             run_task(i, batchsize, augment)
