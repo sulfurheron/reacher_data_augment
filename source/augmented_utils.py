@@ -10,6 +10,7 @@ def augmented_rollout(env, agent, max_path_length=np.inf, animated=False, speedu
     agent_infos = []
     env_infos = []
     end_effectors = []
+    targets = []
     o = env.reset()
     agent.reset()
     path_length = 0
@@ -41,5 +42,6 @@ def augmented_rollout(env, agent, max_path_length=np.inf, animated=False, speedu
         rewards=tensor_utils.stack_tensor_list(rewards),
         agent_infos=tensor_utils.stack_tensor_dict_list(agent_infos),
         env_infos=tensor_utils.stack_tensor_dict_list(env_infos),
-        end_effectors=end_effectors
+        end_effectors=end_effectors,
+        target=env.wrapped_env.env.env.get_body_com("target")
     )

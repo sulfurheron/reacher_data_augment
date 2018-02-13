@@ -32,15 +32,16 @@ def plot(fig, hl11, ax2, episodic_returns):
     count += 1
     time.sleep(0.01)
 
-def augment_paths(env, paths, repeats=10):
+def augment_paths(env, paths, targetdist, repeats=10):
     augmented_paths = []
     for path in paths:
         augmented_paths.append(path)
         for _ in range(repeats):
             new_path = copy.copy(path)
             env.wrapped_env.env.env.reset_model()
-            fake_target = env.wrapped_env.env.env.get_body_com("target")
-            for step in range(len(paths[0]["rewards"])):
+            fake_target = np.random.uniform(low=path["target"] - targetdist,
+                                            high=path["target"] + targetdist)
+            for step in range(len(path["rewards"])):
                 vec = path["end_effectors"][step] - fake_target
                 reward_dist = - np.linalg.norm(vec)
                 reward_ctrl = - np.square(path["actions"][step]).sum()
@@ -51,24 +52,24 @@ def augment_paths(env, paths, repeats=10):
     return augmented_paths
 
 
-def augment_train(self, episodic_returns, run_num, augment, batchsize):
+def augment_train(self, episodic_returns, run_num, augment, batchsize, targetdist):
     self.start_worker()
     self.init_opt()
-    import matplotlib.pyplot as plt
-    fig = plt.figure(figsize=(20, 6))
-    ax2 = fig.add_subplot(111)
-    plt.ion()
-    hl11, = ax2.plot([], [])
-    plt.grid()
-    plt.pause(0.01)
+    # import matplotlib.pyplot as plt
+    # fig = plt.figure(figsize=(20, 6))
+    # ax2 = fig.add_subplot(111)
+    # plt.ion()
+    # hl11, = ax2.plot([], [])
+    # plt.grid()
+    # plt.pause(0.01)
     for itr in range(self.current_itr, self.n_itr):
         with logger.prefix('itr #%d | ' % itr):
             paths = self.sampler.obtain_samples(itr)
             average_return = np.mean([sum(path["rewards"]) for path in paths])
             episodic_returns.append(average_return)
-            plot(fig, hl11, ax2, episodic_returns)
+            #plot(fig, hl11, ax2, episodic_returns)
             if augment > 0:
-                new_paths = augment_paths(self.env, paths, repeats=augment)
+                new_paths = augment_paths(self.env, paths, targetdist, repeats=augment)
             else:
                 new_paths = paths
             #logger.dump_tabular(with_prefix=False)
@@ -78,12 +79,13 @@ def augment_train(self, episodic_returns, run_num, augment, batchsize):
             self.optimize_policy(itr, samples_data)
             print("Optimization time", time.time() - start)
             self.current_itr = itr + 1
-    with open("../data/new_run_num_%d_augment_%d_batchsize_%d.pkl" % (run_num, augment, batchsize), 'wb') as f:
+    with open("../data/local_target_run_num_%d_augment_%d_batchsize_%d_targetdist_%f.pkl" %
+              (run_num, augment, batchsize, targetdist), 'wb') as f:
         pickle.dump(episodic_returns, f)
-    plt.close()
+    #plt.close()
     self.shutdown_worker()
 
-def run_task(run_num, batchsize, augment):
+def run_task(run_num, batchsize, augment, targetdist=0.02):
     # Please note that different environments with different action spaces may require different
     # policies. For example with a Box action space, a GaussianMLPPolicy works, but for a Discrete
     # action space may need to use a CategoricalMLPPolicy (see the trpo_gym_cartpole.py example)
@@ -109,12 +111,13 @@ def run_task(run_num, batchsize, augment):
         # Uncomment both lines (this and the plot parameter below) to enable plotting
         # plot=True,
     )
-    augment_train(algo, episodic_returns, run_num, augment, batchsize)
-
-for augment in [500, 100]:
-    for batchsize in [50, 100, 200, 500, 2000]:
-        for i in range(10):
-            run_task(i, batchsize, augment)
+    augment_train(algo, episodic_returns, run_num, augment, batchsize, targetdist)
+for targetdist in [0.002, 0.005, 0.02, 0.05, 0.1]:
+    for augment in [0, 10, 50]:
+        for batchsize in [50, 100, 200, 500, 2000]:
+            for i in range(30):
+                print("###########targetdist %r, augment %r, batchsize %r, i %r" % (targetdist, augment, batchsize, i))
+                run_task(i, batchsize, augment, targetdist=targetdist)
 
 
 

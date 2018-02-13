@@ -8,11 +8,12 @@ def plot_it_all():
     plt.figure()
     colors = list(dict(mcolors.BASE_COLORS, **mcolors.CSS4_COLORS).keys())
     count = 0
+    targetdist=0.05
     for batchsize in [50, 100, 200, 500, 2000]:
-        for augmented in [0, 500]:
+        for augmented in [0, 10]:
             returns = []
             for j in range(1000):
-                filename = "../data/new_run_num_%d_augment_%d_batchsize_%d.pkl" % (j, int(augmented), batchsize)
+                filename = "../data/local_target_run_num_%d_augment_%d_batchsize_%d_targetdist_%f.pkl" % (j, int(augmented), batchsize, targetdist)
                 if isfile(filename):
                     data = pickle.load(open(filename, "rb"))[-50:]
                     returns.append(data)
@@ -21,8 +22,10 @@ def plot_it_all():
                 continue
             mean = np.mean(returns, axis=0)
             variance = np.std(returns, axis=0)
-            if augmented:
+            if augmented == 10:
                 linestyle = '--'
+            elif augmented == 50:
+                linestyle = '-.'
             else:
                 linestyle = '-'
             plt.plot(mean,
