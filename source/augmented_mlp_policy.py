@@ -9,6 +9,7 @@ import copy
 import numpy as np
 import time
 import pickle
+from os.path import isfile
 
 global episodic_returns
 
@@ -41,12 +42,14 @@ def augment_paths(env, paths, targetdist, repeats=10):
             env.wrapped_env.env.env.reset_model()
             fake_target = np.random.uniform(low=path["target"] - targetdist,
                                             high=path["target"] + targetdist)
+            fake_target[2] = path["target"][2]
             for step in range(len(path["rewards"])):
                 vec = path["end_effectors"][step] - fake_target
                 reward_dist = - np.linalg.norm(vec)
                 reward_ctrl = - np.square(path["actions"][step]).sum()
                 reward = reward_dist + reward_ctrl
                 new_path["rewards"][step] = reward
+                new_path["observations"][step][4:6] = fake_target[:2]
                 new_path["observations"][step][-3:] = vec.flatten()
             augmented_paths.append(new_path)
     return augmented_paths
@@ -114,8 +117,11 @@ def run_task(run_num, batchsize, augment, targetdist=0.02):
     augment_train(algo, episodic_returns, run_num, augment, batchsize, targetdist)
 for targetdist in [0.002, 0.005, 0.02, 0.05, 0.1]:
     for augment in [0, 10, 50]:
-        for batchsize in [50, 100, 200, 500, 2000]:
+        for batchsize in [50, 100, 500, 2000]:
             for i in range(30):
+                # if isfile("../data/local_target_run_num_%d_augment_%d_batchsize_%d_targetdist_%f.pkl" %
+                #           (i, augment, batchsize, targetdist)):
+                #     continue
                 print("###########targetdist %r, augment %r, batchsize %r, i %r" % (targetdist, augment, batchsize, i))
                 run_task(i, batchsize, augment, targetdist=targetdist)
 
